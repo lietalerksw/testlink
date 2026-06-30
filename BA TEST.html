@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블루아카이브 모의고사</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #F0F4F8;
+            color: #2D3748;
+        }
+        /* 커스텀 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #EDF2F7; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E0; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A0AEC0; 
+        }
+        .ba-primary {
+            background-color: #00AEEF;
+        }
+        .ba-primary:hover {
+            background-color: #0098D1;
+        }
+        .ba-text-primary {
+            color: #00AEEF;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // PDF 내용을 바탕으로 한 문제 데이터 배열
+        const quizData = [
+            {
+                id: 0,
+                isPractice: true,
+                question: "[연습문제] 아래의 헤일로를 보고 등장인물의 이름을 답하시오.",
+                // URL을 넣으면 자동으로 이미지(또는 GIF)로 렌더링됩니다.
+                questionImage: "https://blue-utils.me/img/common/halo/saya.png", // 예시 GIF
+                hint: "",
+                answer: "사야",
+                answerImage: "https://i.namu.wiki/i/7-eidv9HN645Zot9SW7kfbUoMLE4oxlGuLLBfj2w2TembaKE3dFmljV9Gcu5yTEqI_Y-5azZcz2a2V0z3WwARQ.webp" // 정답 이미지도 동일하게 URL 입력 가능
+            },
+            {
+                id: 1,
+                question: "아래의 헤일로를 보고 해당 학생의 이름을 답하시오.",
+                questionImage: "https://drive.google.com/file/d/1aADD7DcOBjuDWyn7hNUor_jKTkI4N2n6/view?usp=drive_link",
+                hint: "",
+                answer: "타치바나 노조미",
+                answerImage: "https://drive.google.com/file/d/1t0Kk7b0J1x7SYSOHrR5pwaAZXuNF91YD/view?usp=drive_link"
+            },
+            {
+                id: 2,
+                question: "아래의 헤일로를 보고 해당 학생의 이름을 답하시오.",
+                questionImage: "https://drive.google.com/file/d/15i_WujR9Mxg7PhEOTUlA-fjt1Xhkxi47/view?usp=drive_link",
+                hint: "",
+                answer: "우시마키 주리",
+                answerImage: "https://drive.google.com/file/d/1ATL62B4IuF5eWQ6vCeMa7mxPNXfen3oY/view?usp=drive_link"
+            },
+            {
+                id: 3,
+                question: "아래의 헤일로를 보고 해당 등장인물의 이름을 답하시오.",
+                questionImage: "https://drive.google.com/file/d/1BVzLIDkziztLwVqm0nXbAl-RE534Dram/view?usp=drive_link",
+                hint: "",
+                answer: "케테르 (KETHER)",
+                answerImage: "https://drive.google.com/file/d/1ohIWwmLj2D5-8B3ytfEB_lUAk6jj9RPz/view?usp=drive_link"
+            },
+            {
+                id: 4,
+                question: "아래의 헤일로의 설명을 보고 해당하는 학생의 이름을 답하시오.\n\n1) 이 학생의 헤일로는 중력의 영향을 받아 모습이 계속 변한다.\n2) 이 학생의 헤일로는 붉은색이다.",
+                questionImage: "",
+                hint: "",
+                answer: "켄자키 츠루기",
+                answerImage: "https://drive.google.com/file/d/1GOr1bdvG_uxLqNcj-H2XyAK4u3HBh6Tq/view?usp=drive_link"
+            },
+            {
+                id: 5,
+                question: "아래의 일러스트의 일부를 보고 학생의 이름을 답하시오.",
+                questionImage: "https://drive.google.com/file/d/1Zwt598OOVWnrl5amejvDuuzcZQzl6ygk/view?usp=drive_link",
+                hint: "",
+                answer: "시로미 이오리",
+                answerImage: "https://drive.google.com/file/d/1cQ0TKxySSLbxpahOvW43SHplzwtlVrTV/view?usp=drive_link"
+            },
+            {
+                id: 6,
+                question: "아래의 일러스트의 일부를 보고 학생의 이름을 답하시오.",
+                questionImage: "https://drive.google.com/file/d/1snQ6mTAgPxbo02fKYGzYcsLEqgcmxxAH/view?usp=drive_link",
+                hint: "",
+                answer: "스나오오카미 시로코",
+                answerImage: "https://drive.google.com/file/d/1Xz6cq24V7Yxae5zKcj-IrVEc2MmX-SWE/view?usp=drive_link"
+            },
+            {
+                id: 7,
+                question: "일러스트의 일부를 보고 학생의 이름을 답하시오.",
+                questionImage: "https://drive.google.com/file/d/17-Qr0HnCHIwdKleKyeuuX1iivJdrDz-X/view?usp=drive_link",
+                hint: "",
+                answer: "요자쿠라 키라라",
+                answerImage: "https://drive.google.com/file/d/1mnJohJDS0Fp3dKFhmplaBLfeUqFs3iJO/view?usp=drive_link"
+            },
+            {
+                id: 8,
+                question: "2명 이상의 학생이 성(姓氏)을 공유하는 (같은 성을 가지고 있는) 학생의 성을 전부 답하시오.\n(예: 사이바 모모이, 사이바 미도리의 경우 '사이바'라고 대답. 단, 예시는 제외)\n\n※ 게임내 학생 프로필 기준",
+                questionImage: "",
+                hint: "",
+                answer: "타치바나, 텐도, 스나오오카미",
+                answerImage: "https://drive.google.com/file/d/1M9rS86tsFIl3KFzH2ddYiujdbGfbYXsq/view?usp=drive_link"
+            },
+            {
+                id: 9,
+                question: "아래 학생의 사진을 보고 해당 학생의 소속학원, 동아리, 이름(성 포함)을 정확하게 답하시오.",
+                questionImage: "https://drive.google.com/file/d/1hPsN9aBQsIjz-eJGGVNyvaJfEjkWY8YA/view?usp=drive_link",
+                hint: "예시 - 아비도스 고등학교 / 대책위원회 스나오오카미 / 시로코",
+                answer: "백귀야행 연합학원 / 백화요란 분쟁조정위원회 / 카데노코지 유카리",
+                answerImage: "https://drive.google.com/file/d/1M2BQcazMjfHsb9GTJat9okr8Gurmj95V/view?usp=drive_link"
+            },
+            {
+                id: 10,
+                question: "다음 애장품을 보고 애장품 주인의 소속 학원, 동아리, 이름(성까지)을 정확하게 답하시오.",
+                questionImage: "https://drive.google.com/file/d/1tiSWvSCm9Tcl-DFtlyTmQDQJS27J2wiX/view?usp=drive_link",
+                hint: "물품 관리대장",
+                answer: "트리니티 종합학원 / 시스터후드 / 와카바 히나타",
+                answerImage: "https://drive.google.com/file/d/1DaSUsVvo0QveWh_zyAzeLSI8k2s9CDYE/view?usp=drive_link"
+            },
+            {
+                id: 11,
+                question: "이벤트에서 획득가능한 아이템의 그림이다. 다음 그림을 보고 이벤트의 이름을 답하시오.",
+                questionImage: "https://drive.google.com/file/d/15GuO-pArNwGSLK7-Faeg8wea1jUXNcuW/view?usp=drive_link",
+                hint: "",
+                answer: "월화몽소",
+                answerImage: "https://drive.google.com/file/d/1Q0UbitFyDZON_f_j5JEoTmpddEHtTIXm/view?usp=drive_link"
+            },
+            {
+                id: 12,
+                question: "다음 스킬은 사오리의 서브스킬의 설명이다. 서브스킬에 영향을 주지만 현재 사오리와 소속이 다른 학생의 이름을 답하시오.\n\n[리더로서의 책임감]\n부대에 자신 포함 아리우스 스쿼드 출신 학생이 2인/3인/4인 이상일 경우 공격력 각각 36.7% / 55% / 73.4%  증가",
+                questionImage: "https://drive.google.com/file/d/1t6WPSOD3xr9vZZDDkavXFAvWuC-w3rRa/view?usp=drive_link",
+                hint: "",
+                answer: "시라스 아즈사",
+                answerImage: "https://drive.google.com/file/d/1c6Z3UFWoCuuYv_dWLPT-0BRZ9qACqnfH/view?usp=drive_link"
+            },
+            {
+                id: 13,
+                question: "다음은 어느 학생의 스킬에 대한 설명이다. 설명을 보고 어떤 학생의 스킬인지 답하시오.\n\n• 역할: 서포터 (MIDDLE) / 공격타입: 관통 / 방어타입: 특수장갑\n• EX 스킬: 자신을 제외한 아군 1인에게 주는 EX 스킬 대미지량 가산\n• 기본 스킬: 일반 공격 12회마다 체력이 가장 낮은 아군 1인과 자신을 치유력 비례 회복\n• 서브 스킬: EX 스킬 발동과 동시에 공격속도 증가",
+                questionImage: "https://drive.google.com/file/d/1x6RHKTtL17blkSqBsdoHG8Q3QmIREAar/view?usp=drive_link",
+                hint: "",
+                answer: "유리조노 세이아 (수영복)",
+                answerImage: "https://drive.google.com/file/d/1ExSeOL0_fAkorUUgNXE9UDbOTjjIj42j/view?usp=drive_link"
+            },
+            {
+                id: 14,
+                question: "다음은 어느 학생의 스킬에 대한 설명이다. 설명을 보고 어떤 학생의 스킬인지 답하시오.\n\n• EX 스킬: 적 1인에게 공격력 비례 대미지 및 공격력 증가\n• 기본 스킬: 25초마다 적 1인의 방어력 감소, 징표 부여\n• 서브 스킬: 징표가 있는 적 공격 시 추가 대미지",
+                questionImage: "",
+                hint: "",
+                answer: "코누리 마키",
+                answerImage: "https://drive.google.com/file/d/16BkgryZrwlOElJLyh54MccAr4tk4U7NT/view?usp=drive_link"
+            },
+            {
+                id: 15,
+                question: "현재 전술대회(PVP)의 도움말의 일부이다. 빈칸에 들어갈 단어(3개)를 순서대로 답하시오.\n\nFEVER TIME 동안 모든 학생의 [   ] 과(와) [   ] 수치가 감소합니다.\nFEVER TIME 동안 [   ] 회복력이 증가합니다.",
+                questionImage: "https://drive.google.com/file/d/1x9dha3vJ83Jkqh5juj0KHzfJPi16qFLL/view?usp=drive_link",
+                hint: "콤마(,)로 구분해서 3개의 단어를 적어주세요.",
+                answer: "방어력, 회피, 코스트",
+                answerImage: "https://drive.google.com/file/d/1R2UsbkHlTunngEOU6KTrdRoOx5L_KYtJ/view?usp=drive_link"
+            },
+            {
+                id: 16,
+                question: "다음은 총력전 보스의 스킬에 대한 설명이다. 보스의 이름과 인세인 이상의 공격 속성을 답하시오.\n\n[지성의 근원 - 강화스킬]\n• 스페셜 학생이 주는 대미지량 80% 증가\n• 스트라이커, 소환물이 주는 대미지량 75% 감소, 코스트 회복력 25% 증가\n• OOO의 신비 특효 75% 가산",
+                questionImage: "",
+                hint: "",
+                answer: "이름: 게부라 (GEBURAH) / 공격타입: 신비",
+                answerImage: "https://drive.google.com/file/d/1c07YQTg8N9UF8q0cBSBcN2N4gCIlo1xR/view?usp=drive_link"
+            },
+            {
+                id: 17,
+                question: "다음은 게임 내 카페 가구의 사진이다. 해당 가구와 상호작용 하는 학생의 이름을 답하시오.",
+                questionImage: "https://drive.google.com/file/d/1hsnxiRNEVzHikZ-a6-3g-RCrO6_0hqJu/view?usp=drive_link",
+                hint: "",
+                answer: "코사카 와카모, 와카모(수영복)",
+                answerImage: "https://drive.google.com/file/d/1WuuWICj1EavqDL03c08lnzCwJ-twpXVp/view?usp=drive_link"
+            },
+            {
+                id: 18,
+                question: "다음은 카페의 유토리 나츠 상호작용 가구 '발렌타인 티 테이블'이다. 나츠가 디저트를 먹는 순서를 답하시오.\n(단, 시작은 맨 위 접시에 있는 A로 하고, A 포함 5개를 적어주세요. 예시: A-1-2-3-4)",
+                questionImage: "https://drive.google.com/file/d/1PvW36J3o-ZMXtvNi4YiwSbaduAja0veB/view?usp=drive_link",
+                hint: "",
+                answer: "A - 2 - 6 - 4 - 5",
+                answerImage: "https://drive.google.com/file/d/1P-PvMCDVo4awnuY7KQ3bbbUmgqxK0eL1/view?usp=drive_link"
+            },
+            {
+                id: 19,
+                question: "다음은 메인스토리 EX. 데카그라마톤 편에 나오는 내용의 일부이다. 빈칸에 알맞은 단어를 답하시오.\n\n태초의 말을 너에게 전하니, 거기에 빛이 있을 것이다.\n너의 이름은 곧 [   ] (이)니, 이제 일어나 스스로를 증거하라.\n그리하여 이에 묻노니. 너는 누구이냐.",
+                questionImage: "https://drive.google.com/file/d/1E4OTadaR4Gwk_panYzNblKuYmaQwKxCM/view?usp=drive_link",
+                hint: "",
+                answer: "왕국",
+                answerImage: "https://drive.google.com/file/d/1A1GB4AF2tPyjgtOJtxRxK1cRBFwkcvUo/view?usp=drive_link"
+            },
+            {
+                id: 20,
+                question: "가위바위보 토너먼트 결승전 (레이사 승 vs 코유키 승)이 벌어졌다. 이 때 우승자와 우승자가 무엇을 냈는지 답하시오.",
+                questionImage: "https://drive.google.com/file/d/1BP3MiCCoXmOu9fy_iQe8V9BFYaUUKfGe/view?usp=drive_link",
+                hint: "",
+                answer: "우승자: 레이사 / 낸 것: 주먹",
+                answerImage: "https://drive.google.com/file/d/19lLkhVHEjKeFgcnk4hUVrLqzanWZBxYF/view?usp=drive_link"
+            }
+        ];
+
+        // 인트로(시작) 화면에 표시할 이미지 URL을 이곳에 입력하세요. (구글 드라이브 링크 지원)
+        // 이미지를 사용하지 않으려면 "" (빈 문자열)로 비워두시면 기본 아이콘이 표시됩니다.
+        const introImageURL = "https://drive.google.com/file/d/1f4O-dwT9cdrppfOzlAZPYVCoPGFugnVV/view?usp=drive_link"; 
+
+        const App = () => {
+            const [screen, setScreen] = useState('intro'); // 'intro', 'quiz', 'end'
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [userAnswers, setUserAnswers] = useState(Array(quizData.length).fill(''));
+            const [showAnswer, setShowAnswer] = useState(false);
+            const [inputValue, setInputValue] = useState('');
+            const inputRef = useRef(null);
+
+            // URL 여부를 판별하여 이미지를 렌더링하거나 텍스트 플레이스홀더를 렌더링하는 헬퍼 함수
+            const renderImage = (source, altText) => {
+                if (!source) return null;
+                
+                // HTTP/HTTPS 로 시작하거나 data:image 로 시작하면 실제 이미지(GIF 포함) 태그로 렌더링
+                if (source.startsWith('http://') || source.startsWith('https://') || source.startsWith('data:image')) {
+                    
+                    // 구글 드라이브 링크 호환성 처리 (file/d/, open?id=, uc?id=, uc?export=view 등)
+                    let imgSrc = source;
+                    const gdriveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=))([a-zA-Z0-9_-]+)/;
+                    const match = source.match(gdriveRegex);
+                    
+                    if (match && match[1]) {
+                        // 최근 구글 드라이브 보안 정책으로 uc?export=view가 막히는 현상이 있어 thumbnail API로 우회합니다.
+                        // sz=w1000 은 이미지 가로 해상도를 1000px로 가져오라는 의미입니다. (원본 비율 유지)
+                        imgSrc = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+                    }
+
+                    return (
+                        <div className="w-full flex justify-center mb-6">
+                            <img 
+                                src={imgSrc} 
+                                alt={altText} 
+                                className="max-w-full h-auto max-h-64 object-contain rounded-xl shadow-sm border border-gray-200"
+                            />
+                        </div>
+                    );
+                }
+                
+                // URL이 아닌 단순 텍스트인 경우 (플레이스홀더)
+                return (
+                    <div className="bg-gray-100 w-full h-48 md:h-64 rounded-xl mb-6 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 p-4 text-center">
+                        <svg className="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-sm font-medium text-gray-500">{source}</span>
+                    </div>
+                );
+            };
+
+            const startQuiz = () => {
+                setScreen('quiz');
+                setCurrentIndex(0);
+                setUserAnswers(Array(quizData.length).fill(''));
+                setShowAnswer(false);
+                setInputValue('');
+            };
+
+            const handleCheckAnswer = () => {
+                const newAnswers = [...userAnswers];
+                newAnswers[currentIndex] = inputValue;
+                setUserAnswers(newAnswers);
+                setShowAnswer(true);
+            };
+
+            const handleNextQuestion = () => {
+                if (currentIndex < quizData.length - 1) {
+                    setCurrentIndex(currentIndex + 1);
+                    setShowAnswer(false);
+                    setInputValue(userAnswers[currentIndex + 1] || '');
+                    // Focus input on next tick
+                    setTimeout(() => inputRef.current && inputRef.current.focus(), 10);
+                } else {
+                    setScreen('end');
+                }
+            };
+
+            const handlePrevQuestion = () => {
+                if (currentIndex > 0) {
+                    setCurrentIndex(currentIndex - 1);
+                    setShowAnswer(false);
+                    setInputValue(userAnswers[currentIndex - 1] || '');
+                }
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    if (!showAnswer) {
+                        handleCheckAnswer();
+                    }
+                }
+            };
+
+            // Render Intro Screen
+            if (screen === 'intro') {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 text-center border-t-8 border-[#00AEEF]">
+                            
+                            {/* 인트로 이미지 렌더링 영역 */}
+                            {introImageURL ? (
+                                <div className="mb-6">
+                                    {renderImage(introImageURL, "인트로 메인 이미지")}
+                                </div>
+                            ) : (
+                                <div className="mb-6 flex justify-center">
+                                    <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-[#00AEEF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            )}
+
+                            <h1 className="text-3xl font-black text-gray-800 mb-2 tracking-tight">블루아카이브 모의고사</h1>
+                            <p className="text-gray-500 font-medium mb-6">히카리 블아 1회 정모 (全知)</p>
+                            
+                            <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left text-sm text-gray-600 space-y-2 border border-gray-100">
+                                <p><strong>주의사항:</strong></p>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li>제작당시 (26년 7월) 한섭 기준입니다.</li>
+                                    <li>학생이라면 실장된 학생을 기준으로 작성해주세요.</li>
+                                    <li>그 외는 등장한 인물 기준입니다.</li>
+                                    <li>시즈널(이격)은 복수정답 인정됩니다.</li>
+                                </ul>
+                            </div>
+
+                            <button 
+                                onClick={startQuiz}
+                                className="w-full ba-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-transform transform hover:-translate-y-1 text-lg"
+                            >
+                                모의고사 시작하기
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Render Quiz Screen (Question View & Answer View)
+            if (screen === 'quiz') {
+                const q = quizData[currentIndex];
+                const progress = ((currentIndex + 1) / quizData.length) * 100;
+
+                // 정답 화면 (전체 화면으로 전환)
+                if (showAnswer) {
+                    return (
+                        <div className="min-h-screen flex flex-col max-w-4xl mx-auto p-4 md:p-8">
+                            {/* Header & Progress */}
+                            <div className="mb-8">
+                                <div className="flex justify-between items-end mb-2">
+                                    <span className="text-sm font-bold ba-text-primary">
+                                        {q.isPractice ? '연습문제 해설' : `해설: Question ${q.id} of ${quizData.length - 1}`}
+                                    </span>
+                                    <span className="text-xs text-gray-500">{Math.round(progress)}% 완료</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div className="ba-primary h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                                </div>
+                            </div>
+
+                            {/* Full-Screen Answer Card */}
+                            <div className="bg-white rounded-2xl shadow-lg border-t-8 border-green-500 p-6 md:p-10 flex-grow mb-6 flex flex-col items-center">
+                                <h2 className="text-2xl md:text-3xl font-black text-gray-800 mb-6">정답 확인</h2>
+
+                                {/* Answer Image (Larger display) */}
+                                {q.answerImage && (
+                                    <div className="w-full mb-8 flex justify-center">
+                                        {renderImage(q.answerImage, "정답/해설 이미지")}
+                                    </div>
+                                )}
+
+                                {/* Correct Answer Box */}
+                                <div className="w-full bg-green-50 rounded-2xl p-8 mb-8 text-center border border-green-100 shadow-inner">
+                                    <span className="text-green-600 font-bold mb-2 block">모범 답안</span>
+                                    <p className="text-2xl md:text-3xl font-bold text-gray-900 whitespace-pre-line leading-snug">{q.answer}</p>
+                                </div>
+
+                                {/* User's Answer Box */}
+                                <div className="w-full bg-gray-50 rounded-xl p-6 border border-gray-200 text-center">
+                                    <span className="text-sm font-bold text-gray-500 mb-2 block">내가 입력한 답안</span>
+                                    <p className={`text-lg md:text-xl font-medium ${!userAnswers[currentIndex] ? 'text-gray-400 italic' : 'text-gray-800'}`}>
+                                        {userAnswers[currentIndex] || '미입력'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Navigation */}
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={handleNextQuestion}
+                                    autoFocus
+                                    className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-5 rounded-2xl shadow-xl transition-transform active:scale-95 text-lg"
+                                >
+                                    {currentIndex === quizData.length - 1 ? '모의고사 종료' : '다음 문제 진행'}
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+
+                // 문제 푸는 화면 (Question View)
+                return (
+                    <div className="min-h-screen flex flex-col max-w-3xl mx-auto p-4 md:p-8">
+                        {/* Header & Progress */}
+                        <div className="mb-8">
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="text-sm font-bold ba-text-primary">
+                                    {q.isPractice ? '연습문제' : `Question ${q.id} of ${quizData.length - 1}`}
+                                </span>
+                                <span className="text-xs text-gray-500">{Math.round(progress)}% 완료</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <div className="ba-primary h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                            </div>
+                        </div>
+
+                        {/* Question Card */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 flex-grow mb-6">
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 whitespace-pre-line leading-relaxed">
+                                {q.question}
+                            </h2>
+                            
+                            {/* Image Placeholder or Actual Image */}
+                            {renderImage(q.questionImage, "문제 이미지")}
+
+                            {q.hint && (
+                                <div className="bg-blue-50 border-l-4 border-[#00AEEF] p-4 rounded-r-lg mb-6">
+                                    <p className="text-sm text-blue-800 font-medium">{q.hint}</p>
+                                </div>
+                            )}
+
+                            {/* Answer Input Section */}
+                            <div className="mt-8">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">정답 입력</label>
+                                <input 
+                                    ref={inputRef}
+                                    type="text" 
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder="정답을 입력해주세요"
+                                    className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-lg rounded-xl focus:ring-[#00AEEF] focus:border-[#00AEEF] block p-4 outline-none transition-shadow"
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+
+                        {/* Navigation */}
+                        <div className="flex justify-between items-center gap-4">
+                            <button 
+                                onClick={handlePrevQuestion}
+                                disabled={currentIndex === 0}
+                                className={`px-6 py-4 rounded-xl font-bold transition-colors ${currentIndex === 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 shadow-sm hover:bg-gray-50 border border-gray-200'}`}
+                            >
+                                이전 문제
+                            </button>
+                            
+                            <button 
+                                onClick={handleCheckAnswer}
+                                className="flex-grow ba-primary text-white font-bold py-4 rounded-xl shadow-md transition-transform active:scale-95"
+                            >
+                                정답 확인
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Render End Screen
+            if (screen === 'end') {
+                return (
+                    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-10 text-center border-t-8 border-[#00AEEF]">
+                            <div className="mb-6 flex justify-center">
+                                <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <h2 className="text-3xl font-black text-gray-800 mb-4 tracking-tight">수고하셨습니다!</h2>
+                            <p className="text-gray-500 font-medium mb-8">모든 문제 풀이가 끝났습니다.<br/>블아 모의고사에 참여해주셔서 감사합니다.</p>
+                            
+                            <button 
+                                onClick={startQuiz}
+                                className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-4 rounded-xl shadow-lg transition-transform transform hover:-translate-y-1"
+                            >
+                                처음부터 다시 풀기
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return null;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
